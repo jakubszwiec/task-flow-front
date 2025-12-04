@@ -57,7 +57,7 @@ const CreateTask = () => {
     setLoading(true)
 
     try {
-      const todolist = taskData.todoChecklist?.map((item)=>({
+      const todolist = taskData.toDoChecklist?.map((item)=>({
         text: item,
         completed: false,
       }))

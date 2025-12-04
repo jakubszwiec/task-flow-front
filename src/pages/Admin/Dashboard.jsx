@@ -10,7 +10,7 @@ import TaskListTable from '../../components/TaskListTable'
 import CustomPieChart from '../../components/CustomPieChart'
 
 const COLORS_1 = [ '#00aa00', '#0000aa',  '#aa0000', ]
-const COLORS_2 = [ '#00aa00', '#0000aa', '#aa0000', ]
+const COLORS_2 = [ '#00aa00', '#E0A622', '#aa0000', ]
 
 const Dashboard = () => {
   useUserAuth()
