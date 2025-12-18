@@ -55,7 +55,7 @@ const SignUp = () => {
         localStorage.setItem('token', token)
         updateUser(response.data)
 
-        navigate('/admin/dashboard')
+        navigate('/dashboard')
       }
     } catch (e) {
       if (e.response && e.response.data.message) {

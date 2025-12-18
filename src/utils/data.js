@@ -11,19 +11,19 @@ export const SIDE_MENU_DATA = [
         id:'01',
         label:'Panel',
         icon:LuLayoutDashboard,
-        path:'/admin/dashboard'
+        path:'/dashboard'
     },
     {
         id:'02',
         label:'Moje projekty',
         icon:LuClipboardCheck,
-        path:'/admin/tasks'
+        path:'/tasks'
     },
     {
         id:'03',
         label:'Dodaj projekt',
         icon:LuSquarePlus,
-        path:'/admin/create-task'
+        path:'/create-task'
     },
     {
         id:'04',

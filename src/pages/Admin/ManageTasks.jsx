@@ -4,10 +4,13 @@ import { API_PATHS } from '../../utils/apiPaths'       // Dostosuj ścieżkę
 import moment from 'moment' // Opcjonalnie do formatowania daty (npm install moment)
 import { LuCalendar } from 'react-icons/lu'
 import DashboardLayout from '../../components/layouts/DashboardLayout'
+import { useNavigate } from 'react-router-dom'
+import Modal from '../../components/Modal'
 
 const ManageTasks = () => {
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   // Pobieranie zadań z API
   const getAllTasks = async () => {
@@ -44,15 +47,17 @@ const ManageTasks = () => {
     }
   }
 
-  // Filtrowanie zadań do odpowiednich kolumn
-  // UWAGA: Sprawdź w bazie jakie masz dokładnie statusy (PENDING czy TODO?)
+  const handleClick = (taskId) => {
+    navigate(`/edit-task/${taskId}`)
+  }
+
   const todoTasks = tasks.filter(task => task.status === 'PENDING' || task.status === 'TODO')
   const inProgressTasks = tasks.filter(task => task.status === 'IN_PROGRESS')
   const completedTasks = tasks.filter(task => task.status === 'COMPLETED')
 
   // Komponent pojedynczej karty zadania
   const TaskCard = ({ task }) => (
-    <div className='bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 mb-3 hover:shadow-md transition-shadow cursor-pointer'>
+    <div className='bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 mb-3 hover:shadow-md transition-shadow cursor-pointer' onClick={() => handleClick(task.id)}>
       <div className='flex justify-between items-start mb-2'>
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
           {task.priority}
@@ -139,6 +144,9 @@ const ManageTasks = () => {
 
       </div>
     </div>
+
+    
+
     </DashboardLayout>
   )
 }
