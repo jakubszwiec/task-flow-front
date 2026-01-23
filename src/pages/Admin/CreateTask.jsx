@@ -26,8 +26,7 @@ const CreateTask = () => {
     priority: 'LOW',
     status: 'PENDING',
     dueDate: null,
-    assignedToId: null, // ZMIANA: Int lub null
-    createdById: user?.id, // ZMIANA: Int
+    assignedTo: null,
     toDoCheckList: [],
     attachments: [],
   })
@@ -53,8 +52,7 @@ const CreateTask = () => {
         dueDate: new Date(taskData.dueDate).toISOString(),
         toDoCheckList: todolist,
         // Upewniamy się, że wysyłamy Inty
-        assignedToId: Number(taskData.assignedToId),
-        createdById: Number(taskData.createdById || user?.id),
+        assignedTo: taskData.assignedTo,
     }
   }
 
@@ -90,8 +88,7 @@ const CreateTask = () => {
           ...taskData,
           dueDate: new Date(taskData.dueDate).toISOString(),
           toDoCheckList: todolist,
-          assignedToId: Number(taskData.assignedToId),
-          createdById: Number(taskData.createdById),
+          assignedTo: taskData.assignedTo,
       }
 
       await axiosInstance.put(API_PATHS.TASKS.UPDATE_TASK(taskId), payload)
@@ -119,7 +116,7 @@ const CreateTask = () => {
       return
     }
     // ZMIANA: Walidacja pojedynczego ID (czy nie jest null/0)
-    if (!taskData.assignedToId) {
+    if (!taskData.assignedTo) {
       setError('Przypisz użytkownika!')
       return
     }
@@ -162,8 +159,7 @@ const CreateTask = () => {
           status: taskInfo.status || 'PENDING',
           dueDate: taskInfo.dueDate ? moment(taskInfo.dueDate).format('YYYY-MM-DD') : null,
           
-          assignedToId: mappedAssignedToId ? Number(mappedAssignedToId) : null,
-          createdById: taskInfo.createdById ? Number(taskInfo.createdById) : (taskInfo.createdBy?.id || user?.id),
+          assignedTo: mappedAssignedToId ? Number(mappedAssignedToId) : null,
           
           toDoCheckList: taskInfo?.toDoCheckList?.map((item) => item.text) || [],
           attachments: [],
@@ -266,8 +262,8 @@ const CreateTask = () => {
                   {/* Komponent SelectUsers - przekazujemy pojedyncze ID */}
                   <SelectUsers
                     thisUserId={user?.id}
-                    selectedUserId={taskData.assignedToId}
-                    setSelectedUser={(id) => handleValueChange('assignedToId', id)}
+                    selectedUserId={taskData.assignedTo}
+                    setSelectedUser={(id) => handleValueChange('assignedTo', id)}
                   />
                 </div>
               </div>
