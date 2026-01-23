@@ -1,11 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react'
-import {useLocation, useNavigate, useParams} from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useUserAuth } from '../../hooks/useUserAuth'
 import DashboardLayout from '../../components/layouts/DashboardLayout'
 import { UserContext } from '../../context/userContext'
 import axiosInstance from '../../utils/axiosInstance'
 import { API_PATHS } from '../../utils/apiPaths'
-import InfoCard from '../../components/cards/InfoCard'
 import { LuTrash } from 'react-icons/lu'
 import { PRIORITY_DATA } from '../../utils/data'
 import SelectDropdown from '../../components/inputs/SelectDropdown'
@@ -16,10 +15,7 @@ import Modal from '../../components/Modal'
 
 const CreateTask = () => {
   useUserAuth()
-  const {user} = useContext(UserContext)
-
-  // const location = useLocation()
-  // const { taskId } = location.state || {}
+  const { user } = useContext(UserContext)
 
   const { taskId } = useParams()
   const navigate = useNavigate()
@@ -30,78 +26,78 @@ const CreateTask = () => {
     priority: 'LOW',
     status: 'PENDING',
     dueDate: null,
-    assignedTo: [],
-    toDoChecklist: [],
+    assignedToId: null, // ZMIANA: Int lub null
+    createdById: user?.id, // ZMIANA: Int
+    toDoCheckList: [],
     attachments: [],
   })
 
   const [currentTask, setCurrentTask] = useState(null)
-
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
   const [openDeleteAlert, setOpenDeleteAlert] = useState(false)
 
   const handleValueChange = (key, value) => {
-    setTaskData((prevData) => ({ ...prevData, [key]: value}))
+    setTaskData((prevData) => ({ ...prevData, [key]: value }))
   }
 
-  const clearData = () => {
-    setTaskData({
-      title: '',
-      description: '',
-      priority: 'LOW',
-      status: 'PENDING',
-      dueDate: null,
-      assignedTo: [],
-      toDoChecklist: [],
-      attachments: [],
-    })
+  // Funkcja pomocnicza do budowania payloadu
+  const buildPayload = () => {
+    const todolist = taskData.toDoCheckList?.map((item) => ({
+        text: typeof item === 'string' ? item : item.text,
+        completed: typeof item === 'object' ? item.completed : false,
+    }))
+
+    return {
+        ...taskData,
+        dueDate: new Date(taskData.dueDate).toISOString(),
+        toDoCheckList: todolist,
+        // Upewniamy się, że wysyłamy Inty
+        assignedToId: Number(taskData.assignedToId),
+        createdById: Number(taskData.createdById || user?.id),
+    }
   }
 
   const createTask = async () => {
     setLoading(true)
-
     try {
-      const todolist = taskData.toDoChecklist?.map((item)=>({
-        text: item,
-        completed: false,
-      }))
-
-      const response = await axiosInstance.post(
-        API_PATHS.TASKS.CREATE_TASK, {...taskData, dueDate: new Date(taskData.dueDate).toISOString(), todoChecklist: todolist,}
-      )
-
-      //toast.success('Projekt stworzony pomyślnie')
+      const payload = buildPayload()
+      await axiosInstance.post(API_PATHS.TASKS.CREATE_TASK, payload)
+      navigate('/tasks')
     } catch (error) {
       console.error('Błąd tworzenia: ', error)
-      setLoading(false)
     } finally {
       setLoading(false)
     }
-      navigate('/tasks')
   }
 
   const updateTask = async () => {
     setLoading(true)
-
     try {
-      const todolist = taskData.toDoChecklist?.map((item)=>{
-        const prevTodoChecklist = currentTask?.toDoChecklist || []
-        const existingItem = prevTodoChecklist.find((todo) => todo.text === item)
+      // Zachowujemy status ukończenia zadań z checklisty
+      const todolist = taskData.toDoCheckList?.map((item) => {
+        const textVal = typeof item === 'string' ? item : item.text
+        const prevTodoCheckList = currentTask?.toDoCheckList || []
+        const existingItem = prevTodoCheckList.find((todo) => todo.text === textVal)
+        
         return {
-          text: item,
+          text: textVal,
           completed: existingItem ? existingItem.completed : false,
         }
       })
 
-      const response = await axiosInstance.put(
-        API_PATHS.TASKS.UPDATE_TASK(taskId),
-        {...taskData, dueDate: new Date(taskData.dueDate).toISOString(), todoChecklist: todolist,}
-      )
+      const payload = {
+          ...taskData,
+          dueDate: new Date(taskData.dueDate).toISOString(),
+          toDoCheckList: todolist,
+          assignedToId: Number(taskData.assignedToId),
+          createdById: Number(taskData.createdById),
+      }
+
+      await axiosInstance.put(API_PATHS.TASKS.UPDATE_TASK(taskId), payload)
+      navigate('/tasks')
     } catch (error) {
       console.error('Błąd aktualizacji: ', error)
-      setLoading(false)
     } finally {
       setLoading(false)
     }
@@ -114,54 +110,62 @@ const CreateTask = () => {
       setError('Wprowadź tytuł!')
       return
     }
-
     if (!taskData.description.trim()) {
       setError('Wprowadź opis!')
       return
     }
-
     if (!taskData.dueDate) {
       setError('Wprowadź datę!')
       return
     }
-
-    if (taskData.assignedTo?.length === 0) {
-      setError('Przypisz użytkowników!')
+    // ZMIANA: Walidacja pojedynczego ID (czy nie jest null/0)
+    if (!taskData.assignedToId) {
+      setError('Przypisz użytkownika!')
       return
     }
-
-    if (taskData.toDoChecklist?.length === 0) {
+    if (taskData.toDoCheckList?.length === 0) {
       setError('Dodaj zadanie!')
       return
     }
 
     if (taskId) {
       updateTask()
-      return
+    } else {
+      createTask()
     }
-
-    createTask()
   }
 
   const getTaskDetailsById = async () => {
     try {
-      const response = await axiosInstance.get(
-        API_PATHS.TASKS.GET_TASK_BY_ID(taskId)
-      )
+      const response = await axiosInstance.get(API_PATHS.TASKS.GET_TASK_BY_ID(taskId))
       if (response.data) {
         const taskInfo = response.data
         setCurrentTask(taskInfo)
+        
+        // Logika wyciągania ID z assignedTo (które może być obiektem lub ID)
+        let mappedAssignedToId = null
+        if (taskInfo.assignedTo) {
+            if (typeof taskInfo.assignedTo === 'object') {
+                mappedAssignedToId = taskInfo.assignedTo.id // Jeśli backend zwraca obiekt user
+            } else {
+                mappedAssignedToId = taskInfo.assignedTo // Jeśli backend zwraca od razu ID
+            }
+        } else if (taskInfo.assignedToId) {
+            // Backup na wypadek gdyby GET zwracał już nowe pole
+            mappedAssignedToId = taskInfo.assignedToId
+        }
+
         setTaskData({
           title: taskInfo.title || '',
           description: taskInfo.description || '',
           priority: taskInfo.priority || 'LOW',
           status: taskInfo.status || 'PENDING',
-          dueDate: taskInfo.dueDate 
-            ? moment(taskInfo.dueDate).format('YYYY-MM-DD') 
-            : null,
-          //assignedTo: taskInfo?.assignedTo?.map((item) => item?._id) || [],
-          assignedTo: [],
-          toDoChecklist: taskInfo?.toDoChecklist?.map((item) => item.text) || [],
+          dueDate: taskInfo.dueDate ? moment(taskInfo.dueDate).format('YYYY-MM-DD') : null,
+          
+          assignedToId: mappedAssignedToId ? Number(mappedAssignedToId) : null,
+          createdById: taskInfo.createdById ? Number(taskInfo.createdById) : (taskInfo.createdBy?.id || user?.id),
+          
+          toDoCheckList: taskInfo?.toDoCheckList?.map((item) => item.text) || [],
           attachments: [],
         })
       }
@@ -184,10 +188,8 @@ const CreateTask = () => {
 
   useEffect(() => {
     if (taskId) {
-      getTaskDetailsById(taskId)
+      getTaskDetailsById()
     }
-
-    return () => {}
   }, [taskId])
 
   return (
@@ -196,86 +198,85 @@ const CreateTask = () => {
         <div className='card my-5'>
           <div>
             <div className='col-span-3'>
-              <h2 className='text-xl md:text-2xl'>
-                {taskId ? 'Edytuj Projekt' : 'Stwórz Projekt'}
-              </h2>
+              {/* Header i Przycisk Usuń */}
+              <div className='flex items-center justify-between mb-6'>
+                <h2 className='text-xl md:text-2xl font-bold text-gray-800'>
+                  {taskId ? 'Edytuj Projekt' : 'Stwórz Projekt'}
+                </h2>
 
-              {taskId && (
-                <button
-                className='flex items-center gap-2 text-[13px] font-medium text-red-600'
-                onClick={() => setOpenDeleteAlert(true)}>
-                  <LuTrash className='text-base' /> Usuń
-                </button>
-              )}
-
-              <div>
-                <label className='text-xs font-medium text-slate-600'>Tytuł</label>
-
-                <input 
-                  placeholder=''
-                  className='form-input'
-                  value={taskData.title}
-                  onChange={({target}) =>
-                   handleValueChange('title', target.value)}
-                  type="text" />
+                {taskId && (
+                  <button
+                    type="button"
+                    className='flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-800 transition-colors bg-red-50 px-3 py-2 rounded-lg'
+                    onClick={() => setOpenDeleteAlert(true)}
+                  >
+                    <LuTrash className='text-lg' /> Usuń projekt
+                  </button>
+                )}
               </div>
 
+              {/* Formularz */}
               <div>
-                <label className='text-xs font-medium text-slate-600'>Opis</label>
+                <label className='text-xs font-medium text-slate-600'>Tytuł</label>
+                <input 
+                  placeholder='Wpisz tytuł'
+                  className='form-input'
+                  value={taskData.title}
+                  onChange={({target}) => handleValueChange('title', target.value)}
+                  type="text" 
+                />
+              </div>
 
+              <div className='mt-3'>
+                <label className='text-xs font-medium text-slate-600'>Opis</label>
                 <textarea 
-                  placeholder=''
+                  placeholder='Wpisz opis zadania'
                   className='form-input'
                   rows={4}
                   value={taskData.description}
-                  onChange={({target}) =>
-                   handleValueChange('description', target.value)}
-                  type="text" />
+                  onChange={({target}) => handleValueChange('description', target.value)}
+                />
               </div>
               
-              <div className='grid grid-cols-12 gap-4 mt-2'>
+              <div className='grid grid-cols-12 gap-4 mt-3'>
                 <div className='col-span-6 md:col-span-4'>
                   <label className='text-xs font-medium text-slate-600'>Priorytet</label>
-
                   <SelectDropdown
                     placeholder='Wybierz'
                     options={PRIORITY_DATA}
                     value={taskData.priority}
-                    onChange={(value) =>
-                    handleValueChange('priority', value)}
+                    onChange={(value) => handleValueChange('priority', value)}
                     />
                 </div>
 
                 <div className='col-span-6 md:col-span-4'>
                   <label className='text-xs font-medium text-slate-600'>Data zakończenia</label>
-
                   <input 
                     placeholder='DD/MM/RRRR'
                     className='form-input'
-                    value={taskData.dueDate}
-                    onChange={({target}) =>
-                    handleValueChange('dueDate', target.value)}
-                    type="date" />
+                    value={taskData.dueDate || ''}
+                    onChange={({target}) => handleValueChange('dueDate', target.value)}
+                    type="date" 
+                   />
                 </div>
 
                 <div className='col-span-12 md:col-span-3'>
-                  <label className='text-xs font-medium text-slate-600'>Dodaj członków</label>
-
+                  <label className='text-xs font-medium text-slate-600'>Przypisz wykonawcę</label>
+                  
+                  {/* Komponent SelectUsers - przekazujemy pojedyncze ID */}
                   <SelectUsers
-                    selectedUsers={taskData.assignedTo}
-                    setSelectedUser={(value) => {
-                      handleValueChange('assignedTo', value)
-                    }}
+                    thisUserId={user?.id}
+                    selectedUserId={taskData.assignedToId}
+                    setSelectedUser={(id) => handleValueChange('assignedToId', id)}
                   />
                 </div>
               </div>
 
               <div className='mt-3'>
-                    <label className='text-xs font-medium text-slate-600'>Zadania</label>
-
+                    <label className='text-xs font-medium text-slate-600'>Lista zadań (Checklist)</label>
                     <TodoListInput
-                      todoList={taskData?.toDoChecklist}
-                      setTodoList={(value)=>handleValueChange('toDoChecklist', value)}
+                      todoList={taskData?.toDoCheckList}
+                      setTodoList={(value)=>handleValueChange('toDoCheckList', value)}
                     />
               </div>
 
@@ -295,6 +296,7 @@ const CreateTask = () => {
           </div>
         </div>
       </div>
+
       <Modal isOpen={openDeleteAlert}
         onClose={() => setOpenDeleteAlert(false)}
         title="Usuń zadanie">
@@ -309,7 +311,6 @@ const CreateTask = () => {
                 Usuń
             </button>
         </div>
-
     </Modal>
     </DashboardLayout>
   )
