@@ -1,6 +1,6 @@
 import React from 'react'
 
-const TaskListTable = ({tableData}) => {
+const TaskListTable = ({ tableData }) => {
   return (
     <div className='overflow-x-auto p-0 rounded-lg mt-3'>
         <table className='min-w-full'>
@@ -15,10 +15,21 @@ const TaskListTable = ({tableData}) => {
             <tbody>
                 {tableData.map((task)=> (
                     <tr key={task._id} className='border-t border-gray-200'>
-                        <td className='my-3 mx-4 text-gray-700 text-[13px] line-clamp-1 overflow-hidden'>{task.title}</td>
-                        <td className='my-3 mx-4 text-gray-700 text-[13px] line-clamp-1 overflow-hidden'>{task.status}</td>
-                        <td className='my-3 mx-4 text-gray-700 text-[13px] line-clamp-1 overflow-hidden'>{task.priority}</td>
-                        <td className='my-3 mx-4 text-gray-700 text-[13px] line-clamp-1 overflow-hidden'>{task.createdAt}</td>
+                        <td className='py-3 px-4 text-gray-700 text-[13px]'>
+                            <div className='line-clamp-1'>{task.title}</div>
+                        </td>
+                        
+                        <td className='py-3 px-4 text-gray-700 text-[13px]'>
+                            <div className='line-clamp-1'>{task.status}</div>
+                        </td>
+
+                        <td className='py-3 px-4 text-gray-700 text-[13px]'>
+                            <div className='line-clamp-1'>{task.priority}</div>
+                        </td>
+
+                        <td className='py-3 px-4 text-gray-700 text-[13px] hidden md:table-cell'>
+                            <div className='line-clamp-1'>{task.createdAt}</div>
+                        </td>
                     </tr>   
                 ))}
             </tbody>
