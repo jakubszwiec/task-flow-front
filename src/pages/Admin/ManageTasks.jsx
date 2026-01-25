@@ -76,18 +76,6 @@ const ManageTasks = () => {
         <div className='flex items-center gap-1 text-xs text-gray-500'>
             {task.dueDate ? moment(task.dueDate).format("DD MMM") : 'Brak daty'}
         </div>
-        
-        {/* Tu możesz dodać avatary przypisanych osób */}
-        {task.assignedTo?.length > 0 && (
-            <div className='flex -space-x-2'>
-                {task.assignedTo.slice(0,3).map((u, i) => (
-                    <div key={i} className='w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] border-2 border-white'>
-                        {/* Pierwsza litera imienia */}
-                        {u.name ? u.name[0] : 'U'}
-                    </div>
-                ))}
-            </div>
-        )}
       </div>
     </div>
   )
