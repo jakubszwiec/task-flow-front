@@ -18,40 +18,49 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault()
 
-    if (!validateEmail(email)) {
-      setError("Wprowadź poprawny adres email")
-      return
-    }
-
-    if (!password) {
-      setError('Wprowadź hasło')
-      return
-    }
+    // ... (walidacja email i hasła bez zmian) ...
+    if (!validateEmail(email)) { setError("Wprowadź poprawny adres email"); return; }
+    if (!password) { setError('Wprowadź hasło'); return; }
 
     setError('')
 
     try {
+      // KROK 1: Logowanie (pobranie tokena)
       const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, {
         email,
         password
       })
 
-      const {token, role} = response.data
+      const { token } = response.data
 
       if (token) {
+        // Ważne: Zapisz token od razu, żeby axiosInstance mógł go użyć w kolejnym zapytaniu
         localStorage.setItem('token', token)
-        updateUser(response.data)
-
-        navigate('/dashboard')
+        
+        // KROK 2: Pobranie danych profilu (korzystając z API_PATHS)
+        // Zakładam, że Twój axiosInstance ma interceptor, który sam dodaje nagłówek "Authorization: Bearer token"
+        // pobierając go z localStorage.
+        
+        const userResponse = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE)
+        const userData = userResponse.data // Tu siedzi { name, email }
+        
+        if(userData) {
+            // KROK 3: Zapisz dane użytkownika i zaktualizuj Context
+            localStorage.setItem('user', JSON.stringify(userData)) 
+            updateUser(userData)
+    
+            // KROK 4: Przekieruj dopiero teraz
+            navigate('/dashboard')
+        }
       }
     } catch (e) {
+      // Obsługa błędów (bez zmian)
       if (e.response && e.response.data.message) {
         setError(e.response.data.message)
       } else {
         setError('Coś poszło nie tak')
       }
     }
-
   }
 
   return (
