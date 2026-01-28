@@ -66,9 +66,7 @@ const ManageTasks = () => {
         // Endpoint: /tasks/{taskId}/status
         // Body: { status: 'IN_PROGRESS' } - dostosuj format do swojego backendu
         // Jeśli backend przyjmuje sam string w body, zmień payload.
-        await axiosInstance.put(`/tasks/${draggableId}/status`, {
-            status: newStatus
-        })
+        await axiosInstance.patch(API_PATHS.TASKS.UPDATE_TASK_STATUS(draggableId, newStatus))
         console.log(`Zaktualizowano status zadania ${draggableId} na ${newStatus}`)
     } catch (error) {
         console.error("Błąd aktualizacji statusu:", error)

@@ -23,7 +23,7 @@ export const API_PATHS = {
         CREATE_TASK: '/tasks',
         UPDATE_TASK: (taskId) => `/tasks/${taskId}`,
         DELETE_TASK: (taskId) => `/tasks/${taskId}`,
-        UPDATE_TASK_STATUS: (taskId) => `/tasks/${taskId}/status`,
+        UPDATE_TASK_STATUS: (taskId, status) => `/tasks/${taskId}/status/${status}`,
         UPDATE_TASK_CHECKLIST: (taskId) => `/tasks/${taskId}/todo`,
     },
 
